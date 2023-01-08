@@ -9,7 +9,7 @@ import (
 type JobBookRepository interface {
 	GetBooks(jobId, serverId string, userIds []string) ([]entities.JobBook, error)
 	GetUserBook(userId, serverId string) ([]entities.JobBook, error)
-	SaveUserBook(userId, jobId, serverId string) error
+	SaveUserBook(jobBook entities.JobBook) error
 }
 
 type JobBookRepositoryImpl struct {
