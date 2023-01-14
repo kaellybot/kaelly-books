@@ -3,13 +3,13 @@ package jobs
 import (
 	"github.com/kaellybot/kaelly-configurator/models/entities"
 	"github.com/kaellybot/kaelly-configurator/utils/databases"
-	"gorm.io/gorm/clause"
 )
 
 type JobBookRepository interface {
 	GetBooks(jobId, serverId string, userIds []string, limit int) ([]entities.JobBook, error)
 	GetUserBook(userId, serverId string) ([]entities.JobBook, error)
 	SaveUserBook(jobBook entities.JobBook) error
+	DeleteUserBook(jobBook entities.JobBook) error
 }
 
 type JobBookRepositoryImpl struct {
@@ -39,7 +39,9 @@ func (repo *JobBookRepositoryImpl) GetUserBook(userId, serverId string) ([]entit
 }
 
 func (repo *JobBookRepositoryImpl) SaveUserBook(jobBook entities.JobBook) error {
-	return repo.db.GetDB().Clauses(clause.OnConflict{
-		UpdateAll: true,
-	}).Create(&jobBook).Error
+	return repo.db.GetDB().Save(jobBook).Error
+}
+
+func (repo *JobBookRepositoryImpl) DeleteUserBook(jobBook entities.JobBook) error {
+	return repo.db.GetDB().Delete(jobBook).Error
 }

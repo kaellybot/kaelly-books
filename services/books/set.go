@@ -17,12 +17,19 @@ func (service *BooksServiceImpl) setRequest(message *amqp.RabbitMQMessage, corre
 	log.Info().Str(constants.LogCorrelationId, correlationId).
 		Msgf("Set job request received")
 
-	err := service.jobBookRepo.SaveUserBook(entities.JobBook{
+	jobBook := entities.JobBook{
 		UserId:   request.UserId,
 		JobId:    request.JobId,
 		ServerId: request.ServerId,
 		Level:    request.Level,
-	})
+	}
+
+	var err error
+	if request.Level > 0 {
+		err = service.jobBookRepo.SaveUserBook(jobBook)
+	} else {
+		err = service.jobBookRepo.DeleteUserBook(jobBook)
+	}
 	if err != nil {
 		service.publishFailedGetAnswer(correlationId, message.Language)
 		return
