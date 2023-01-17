@@ -38,9 +38,7 @@ func (service *BooksServiceImpl) setRequest(message *amqp.RabbitMQMessage, corre
 	service.publishSucceededSetAnswer(correlationId, message.Language)
 }
 
-func (service *BooksServiceImpl) publishSucceededSetAnswer(correlationId string,
-	lg amqp.RabbitMQMessage_Language) {
-
+func (service *BooksServiceImpl) publishSucceededSetAnswer(correlationId string, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
 		Type:     amqp.RabbitMQMessage_JOB_SET_ANSWER,
 		Status:   amqp.RabbitMQMessage_SUCCESS,
@@ -55,9 +53,7 @@ func (service *BooksServiceImpl) publishSucceededSetAnswer(correlationId string,
 	}
 }
 
-func (service *BooksServiceImpl) publishFailedSetAnswer(correlationId string,
-	lg amqp.RabbitMQMessage_Language) {
-
+func (service *BooksServiceImpl) publishFailedSetAnswer(correlationId string, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
 		Type:     amqp.RabbitMQMessage_JOB_SET_ANSWER,
 		Status:   amqp.RabbitMQMessage_FAILED,

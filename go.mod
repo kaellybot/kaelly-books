@@ -2,10 +2,10 @@ module github.com/kaellybot/kaelly-configurator
 
 go 1.18
 
-replace github.com/kaellybot/kaelly-amqp => ../kaelly-amqp
+// replace github.com/kaellybot/kaelly-amqp => ../kaelly-amqp
 
 require (
-	github.com/kaellybot/kaelly-amqp v0.0.1-beta2
+	github.com/kaellybot/kaelly-amqp v0.0.1-beta5
 	github.com/rs/zerolog v1.28.0
 	github.com/spf13/viper v1.14.0
 	gorm.io/driver/mysql v1.4.4
