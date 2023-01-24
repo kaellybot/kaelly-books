@@ -18,6 +18,8 @@ func (service *BooksServiceImpl) getBookRequest(message *amqp.RabbitMQMessage,
 	}
 
 	log.Info().Str(constants.LogCorrelationId, correlationId).
+		Str(constants.LogJobId, request.JobId).
+		Str(constants.LogServerId, request.ServerId).
 		Msgf("Get job books request received")
 
 	books, err := service.jobBookRepo.GetBooks(request.JobId, request.ServerId,

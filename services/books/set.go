@@ -15,6 +15,9 @@ func (service *BooksServiceImpl) setRequest(message *amqp.RabbitMQMessage, corre
 	}
 
 	log.Info().Str(constants.LogCorrelationId, correlationId).
+		Str(constants.LogUserId, request.UserId).
+		Str(constants.LogJobId, request.JobId).
+		Str(constants.LogServerId, request.ServerId).
 		Msgf("Set job request received")
 
 	jobBook := entities.JobBook{
