@@ -31,7 +31,7 @@ func (service *BooksServiceImpl) setRequest(message *amqp.RabbitMQMessage, corre
 		err = service.jobBookRepo.DeleteUserBook(jobBook)
 	}
 	if err != nil {
-		service.publishFailedGetAnswer(correlationId, message.Language)
+		service.publishFailedSetAnswer(correlationId, message.Language)
 		return
 	}
 

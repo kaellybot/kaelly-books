@@ -2,7 +2,7 @@ module github.com/kaellybot/kaelly-configurator
 
 go 1.18
 
-// replace github.com/kaellybot/kaelly-amqp => ../kaelly-amqp
+replace github.com/kaellybot/kaelly-amqp => ../kaelly-amqp
 
 require (
 	github.com/kaellybot/kaelly-amqp v0.0.1-beta5

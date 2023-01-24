@@ -1,47 +1,74 @@
 package books
 
 import (
-	"context"
-
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-configurator/models/constants"
-	"github.com/kaellybot/kaelly-configurator/repositories/jobs"
+	"github.com/kaellybot/kaelly-configurator/models/entities"
+	"github.com/kaellybot/kaelly-configurator/models/mappers"
 	"github.com/rs/zerolog/log"
 )
 
-func New(broker amqp.MessageBrokerInterface, jobBookRepo jobs.JobBookRepository) (
-	*BooksServiceImpl, error) {
+func (service *BooksServiceImpl) getBookRequest(message *amqp.RabbitMQMessage,
+	correlationId string) {
 
-	return &BooksServiceImpl{
-		broker:      broker,
-		jobBookRepo: jobBookRepo,
-	}, nil
-}
-
-func GetBinding() amqp.Binding {
-	return amqp.Binding{
-		Exchange:   amqp.ExchangeRequest,
-		RoutingKey: requestsRoutingkey,
-		Queue:      requestQueueName,
+	request := message.JobGetBookRequest
+	if !isValidJobGetRequest(request) {
+		service.publishFailedGetBookAnswer(correlationId, message.Language)
+		return
 	}
+
+	log.Info().Str(constants.LogCorrelationId, correlationId).
+		Msgf("Get job books request received")
+
+	books, err := service.jobBookRepo.GetBooks(request.JobId, request.ServerId,
+		request.UserIds, int(request.Limit))
+	if err != nil {
+		service.publishFailedGetBookAnswer(correlationId, message.Language)
+		return
+	}
+
+	service.publishSucceededGetBookAnswer(correlationId, request.JobId,
+		request.ServerId, books, message.Language)
 }
 
-func (service *BooksServiceImpl) Consume() error {
-	log.Info().Msgf("Consuming books requests...")
-	return service.broker.Consume(requestQueueName, requestsRoutingkey, service.consume)
-}
+func (service *BooksServiceImpl) publishSucceededGetBookAnswer(correlationId, jobId, serverId string,
+	books []entities.JobBook, lg amqp.Language) {
 
-func (service *BooksServiceImpl) consume(ctx context.Context,
-	message *amqp.RabbitMQMessage, correlationId string) {
+	message := amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_JOB_GET_BOOK_ANSWER,
+		Status:   amqp.RabbitMQMessage_SUCCESS,
+		Language: lg,
+		JobGetBookAnswer: &amqp.JobGetBookAnswer{
+			JobId:     jobId,
+			ServerId:  serverId,
+			Craftsmen: mappers.MapCraftsmen(books),
+		},
+	}
 
-	switch message.Type {
-	case amqp.RabbitMQMessage_JOB_GET_REQUEST:
-		service.getRequest(message, correlationId)
-	case amqp.RabbitMQMessage_JOB_SET_REQUEST:
-		service.setRequest(message, correlationId)
-	default:
-		log.Warn().
+	err := service.broker.Publish(&message, amqp.ExchangeAnswer, answersRoutingkey, correlationId)
+	if err != nil {
+		log.Error().Err(err).
 			Str(constants.LogCorrelationId, correlationId).
-			Msgf("Type not recognized, request ignored")
+			Msgf("Cannot publish via broker, request ignored")
 	}
+}
+
+func (service *BooksServiceImpl) publishFailedGetBookAnswer(correlationId string, lg amqp.Language) {
+	message := amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_JOB_GET_BOOK_ANSWER,
+		Status:   amqp.RabbitMQMessage_FAILED,
+		Language: lg,
+	}
+
+	err := service.broker.Publish(&message, amqp.ExchangeAnswer,
+		answersRoutingkey, correlationId)
+	if err != nil {
+		log.Error().Err(err).
+			Str(constants.LogCorrelationId, correlationId).
+			Msgf("Cannot publish via broker, request ignored")
+	}
+}
+
+func isValidJobGetRequest(request *amqp.JobGetBookRequest) bool {
+	return request != nil
 }
