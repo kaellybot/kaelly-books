@@ -1,4 +1,4 @@
-package books
+package alignments
 
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
@@ -8,10 +8,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (service *BooksServiceImpl) userRequest(message *amqp.RabbitMQMessage, correlationId string) {
-	request := message.JobGetUserRequest
-	if !isValidJobGetUserRequest(request) {
-		service.publishFailedGetUserAnswer(correlationId, message.Language)
+func (service *AlignmentServiceImpl) UserRequest(request *amqp.AlignGetUserRequest, correlationId,
+	answersRoutingkey string, lg amqp.Language) {
+	if !isValidAlignGetUserRequest(request) {
+		service.publishFailedGetUserAnswer(correlationId, answersRoutingkey, lg)
 		return
 	}
 
@@ -20,24 +20,24 @@ func (service *BooksServiceImpl) userRequest(message *amqp.RabbitMQMessage, corr
 		Str(constants.LogServerId, request.ServerId).
 		Msgf("Get job user request received")
 
-	books, err := service.jobBookRepo.GetUserBook(request.UserId, request.ServerId)
+	books, err := service.alignBookRepo.GetUserBook(request.UserId, request.ServerId)
 	if err != nil {
-		service.publishFailedGetBookAnswer(correlationId, message.Language)
+		service.publishFailedGetUserAnswer(correlationId, answersRoutingkey, lg)
 		return
 	}
 
-	service.publishSucceededGetUserAnswer(correlationId, request.ServerId, books, message.Language)
+	service.publishSucceededGetUserAnswer(correlationId, request.ServerId, answersRoutingkey, books, lg)
 }
 
-func (service *BooksServiceImpl) publishSucceededGetUserAnswer(correlationId, serverId string,
-	books []entities.JobBook, lg amqp.Language) {
+func (service *AlignmentServiceImpl) publishSucceededGetUserAnswer(correlationId, serverId, answersRoutingkey string,
+	books []entities.AlignmentBook, lg amqp.Language) {
 
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_GET_USER_ANSWER,
+		Type:     amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER,
 		Status:   amqp.RabbitMQMessage_SUCCESS,
 		Language: lg,
-		JobGetUserAnswer: &amqp.JobGetUserAnswer{
-			Jobs:     mappers.MapJobExperiences(books),
+		AlignGetUserAnswer: &amqp.AlignGetUserAnswer{
+			Beliefs:  mappers.MapAlignExperiences(books),
 			ServerId: serverId,
 		},
 	}
@@ -50,9 +50,9 @@ func (service *BooksServiceImpl) publishSucceededGetUserAnswer(correlationId, se
 	}
 }
 
-func (service *BooksServiceImpl) publishFailedGetUserAnswer(correlationId string, lg amqp.Language) {
+func (service *AlignmentServiceImpl) publishFailedGetUserAnswer(correlationId, answersRoutingkey string, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_GET_USER_ANSWER,
+		Type:     amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER,
 		Status:   amqp.RabbitMQMessage_FAILED,
 		Language: lg,
 	}
@@ -66,6 +66,6 @@ func (service *BooksServiceImpl) publishFailedGetUserAnswer(correlationId string
 	}
 }
 
-func isValidJobGetUserRequest(request *amqp.JobGetUserRequest) bool {
+func isValidAlignGetUserRequest(request *amqp.AlignGetUserRequest) bool {
 	return request != nil
 }

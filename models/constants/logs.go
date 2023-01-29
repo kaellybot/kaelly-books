@@ -7,6 +7,8 @@ const (
 	LogCorrelationId = "correlationId"
 	LogUserId        = "userId"
 	LogJobId         = "jobId"
+	LogCityId        = "cityId"
+	LogOrderId       = "orderId"
 	LogServerId      = "serverId"
 
 	LogLevelFallback = zerolog.InfoLevel

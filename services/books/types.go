@@ -4,7 +4,8 @@ import (
 	"errors"
 
 	amqp "github.com/kaellybot/kaelly-amqp"
-	"github.com/kaellybot/kaelly-configurator/repositories/jobs"
+	"github.com/kaellybot/kaelly-configurator/services/alignments"
+	"github.com/kaellybot/kaelly-configurator/services/jobs"
 )
 
 const (
@@ -22,6 +23,7 @@ type BooksService interface {
 }
 
 type BooksServiceImpl struct {
-	broker      amqp.MessageBrokerInterface
-	jobBookRepo jobs.JobBookRepository
+	broker       amqp.MessageBrokerInterface
+	jobService   jobs.JobService
+	alignService alignments.AlignmentService
 }

@@ -1,4 +1,4 @@
-package books
+package alignments
 
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
@@ -7,43 +7,46 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (service *BooksServiceImpl) setRequest(message *amqp.RabbitMQMessage, correlationId string) {
-	request := message.JobSetRequest
-	if !isValidJobSetRequest(request) {
-		service.publishFailedSetAnswer(correlationId, message.Language)
+func (service *AlignmentServiceImpl) SetRequest(request *amqp.AlignSetRequest, correlationId,
+	answersRoutingkey string, lg amqp.Language) {
+
+	if !isValidAlignSetRequest(request) {
+		service.publishFailedSetAnswer(correlationId, answersRoutingkey, lg)
 		return
 	}
 
 	log.Info().Str(constants.LogCorrelationId, correlationId).
 		Str(constants.LogUserId, request.UserId).
-		Str(constants.LogJobId, request.JobId).
+		Str(constants.LogCityId, request.CityId).
+		Str(constants.LogOrderId, request.OrderId).
 		Str(constants.LogServerId, request.ServerId).
 		Msgf("Set job request received")
 
-	jobBook := entities.JobBook{
+	jobBook := entities.AlignmentBook{
 		UserId:   request.UserId,
-		JobId:    request.JobId,
+		CityId:   request.CityId,
+		OrderId:  request.OrderId,
 		ServerId: request.ServerId,
 		Level:    request.Level,
 	}
 
 	var err error
 	if request.Level > 0 {
-		err = service.jobBookRepo.SaveUserBook(jobBook)
+		err = service.alignBookRepo.SaveUserBook(jobBook)
 	} else {
-		err = service.jobBookRepo.DeleteUserBook(jobBook)
+		err = service.alignBookRepo.DeleteUserBook(jobBook)
 	}
 	if err != nil {
-		service.publishFailedSetAnswer(correlationId, message.Language)
+		service.publishFailedSetAnswer(correlationId, answersRoutingkey, lg)
 		return
 	}
 
-	service.publishSucceededSetAnswer(correlationId, message.Language)
+	service.publishSucceededSetAnswer(correlationId, answersRoutingkey, lg)
 }
 
-func (service *BooksServiceImpl) publishSucceededSetAnswer(correlationId string, lg amqp.Language) {
+func (service *AlignmentServiceImpl) publishSucceededSetAnswer(correlationId, answersRoutingkey string, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_SET_ANSWER,
+		Type:     amqp.RabbitMQMessage_ALIGN_SET_ANSWER,
 		Status:   amqp.RabbitMQMessage_SUCCESS,
 		Language: lg,
 	}
@@ -56,9 +59,9 @@ func (service *BooksServiceImpl) publishSucceededSetAnswer(correlationId string,
 	}
 }
 
-func (service *BooksServiceImpl) publishFailedSetAnswer(correlationId string, lg amqp.Language) {
+func (service *AlignmentServiceImpl) publishFailedSetAnswer(correlationId, answersRoutingkey string, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_SET_ANSWER,
+		Type:     amqp.RabbitMQMessage_ALIGN_SET_ANSWER,
 		Status:   amqp.RabbitMQMessage_FAILED,
 		Language: lg,
 	}
@@ -72,6 +75,6 @@ func (service *BooksServiceImpl) publishFailedSetAnswer(correlationId string, lg
 	}
 }
 
-func isValidJobSetRequest(request *amqp.JobSetRequest) bool {
+func isValidAlignSetRequest(request *amqp.AlignSetRequest) bool {
 	return request != nil
 }

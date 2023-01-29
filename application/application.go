@@ -3,8 +3,11 @@ package application
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-configurator/models/constants"
-	"github.com/kaellybot/kaelly-configurator/repositories/jobs"
+	alignRepo "github.com/kaellybot/kaelly-configurator/repositories/alignments"
+	jobRepo "github.com/kaellybot/kaelly-configurator/repositories/jobs"
+	"github.com/kaellybot/kaelly-configurator/services/alignments"
 	"github.com/kaellybot/kaelly-configurator/services/books"
+	"github.com/kaellybot/kaelly-configurator/services/jobs"
 	"github.com/kaellybot/kaelly-configurator/utils/databases"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -34,13 +37,13 @@ func New() (*Application, error) {
 	}
 
 	// repositories
-	jobBooksRepo := jobs.New(db)
+	jobBooksRepo := jobRepo.New(db)
+	alignBooksRepo := alignRepo.New(db)
 
 	// services
-	booksService, err := books.New(broker, jobBooksRepo)
-	if err != nil {
-		return nil, err
-	}
+	jobService := jobs.New(broker, jobBooksRepo)
+	alignService := alignments.New(broker, alignBooksRepo)
+	booksService := books.New(broker, jobService, alignService)
 
 	return &Application{
 		booksService: booksService,
