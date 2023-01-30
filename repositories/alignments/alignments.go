@@ -23,14 +23,21 @@ func New(db databases.MySQLConnection) *AlignmentBookRepositoryImpl {
 func (repo *AlignmentBookRepositoryImpl) GetBooks(cityId, orderId, serverId string,
 	userIds []string, limit int) ([]entities.AlignmentBook, error) {
 
-	// TODO no optional order/city here
-
 	var alignBooks []entities.AlignmentBook
-	return alignBooks, repo.db.GetDB().
-		Where("city_id = ? AND order_id = ? AND server_id = ? AND user_id IN (?)", cityId, orderId, serverId, userIds).
+	query := repo.db.GetDB().
+		Where("server_id = ? AND user_id IN (?)", serverId, userIds).
 		Order("level DESC").
-		Limit(limit).
-		Find(&alignBooks).Error
+		Limit(limit)
+
+	if len(cityId) > 0 {
+		query = query.Where("city_id = ?", cityId)
+	}
+
+	if len(orderId) > 0 {
+		query = query.Where("order_id = ?", orderId)
+	}
+
+	return alignBooks, query.Find(&alignBooks).Error
 }
 
 func (repo *AlignmentBookRepositoryImpl) GetUserBook(userId, serverId string) ([]entities.AlignmentBook, error) {
