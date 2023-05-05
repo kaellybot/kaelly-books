@@ -1,5 +1,5 @@
 package entities
 
 type Server struct {
-	Id string `gorm:"primaryKey;type:varchar(100)"`
+	ID string `gorm:"primaryKey;type:varchar(100)"`
 }

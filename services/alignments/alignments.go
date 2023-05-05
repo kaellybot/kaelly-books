@@ -2,11 +2,11 @@ package alignments
 
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
-	"github.com/kaellybot/kaelly-configurator/repositories/alignments"
+	"github.com/kaellybot/kaelly-books/repositories/alignments"
 )
 
-func New(broker amqp.MessageBrokerInterface, alignBookRepo alignments.AlignmentBookRepository) *AlignmentServiceImpl {
-	return &AlignmentServiceImpl{
+func New(broker amqp.MessageBroker, alignBookRepo alignments.Repository) *Impl {
+	return &Impl{
 		broker:        broker,
 		alignBookRepo: alignBookRepo,
 	}

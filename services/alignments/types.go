@@ -2,16 +2,16 @@ package alignments
 
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
-	"github.com/kaellybot/kaelly-configurator/repositories/alignments"
+	"github.com/kaellybot/kaelly-books/repositories/alignments"
 )
 
-type AlignmentService interface {
-	GetBookRequest(request *amqp.AlignGetBookRequest, correlationId, answersRoutingkey string, lg amqp.Language)
-	SetRequest(request *amqp.AlignSetRequest, correlationId, answersRoutingkey string, lg amqp.Language)
-	UserRequest(request *amqp.AlignGetUserRequest, correlationId, answersRoutingkey string, lg amqp.Language)
+type Service interface {
+	GetBookRequest(request *amqp.AlignGetBookRequest, correlationID, answersRoutingkey string, lg amqp.Language)
+	SetRequest(request *amqp.AlignSetRequest, correlationID, answersRoutingkey string, lg amqp.Language)
+	UserRequest(request *amqp.AlignGetUserRequest, correlationID, answersRoutingkey string, lg amqp.Language)
 }
 
-type AlignmentServiceImpl struct {
-	broker        amqp.MessageBrokerInterface
-	alignBookRepo alignments.AlignmentBookRepository
+type Impl struct {
+	broker        amqp.MessageBroker
+	alignBookRepo alignments.Repository
 }

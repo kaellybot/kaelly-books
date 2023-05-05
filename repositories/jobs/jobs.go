@@ -1,47 +1,34 @@
 package jobs
 
 import (
-	"github.com/kaellybot/kaelly-configurator/models/entities"
-	"github.com/kaellybot/kaelly-configurator/utils/databases"
+	"github.com/kaellybot/kaelly-books/models/entities"
+	"github.com/kaellybot/kaelly-books/utils/databases"
 )
 
-type JobBookRepository interface {
-	GetBooks(jobId, serverId string, userIds []string, limit int) ([]entities.JobBook, error)
-	GetUserBook(userId, serverId string) ([]entities.JobBook, error)
-	SaveUserBook(jobBook entities.JobBook) error
-	DeleteUserBook(jobBook entities.JobBook) error
+func New(db databases.MySQLConnection) *Impl {
+	return &Impl{db: db}
 }
 
-type JobBookRepositoryImpl struct {
-	db databases.MySQLConnection
-}
-
-func New(db databases.MySQLConnection) *JobBookRepositoryImpl {
-	return &JobBookRepositoryImpl{db: db}
-}
-
-func (repo *JobBookRepositoryImpl) GetBooks(jobId, serverId string,
-	userIds []string, limit int) ([]entities.JobBook, error) {
-
+func (repo *Impl) GetBooks(jobID, serverID string, userIDs []string, limit int) ([]entities.JobBook, error) {
 	var jobBooks []entities.JobBook
 	return jobBooks, repo.db.GetDB().
-		Where("job_id = ? AND server_id = ? AND user_id IN (?)", jobId, serverId, userIds).
+		Where("job_id = ? AND server_id = ? AND user_id IN (?)", jobID, serverID, userIDs).
 		Order("level DESC").
 		Limit(limit).
 		Find(&jobBooks).Error
 }
 
-func (repo *JobBookRepositoryImpl) GetUserBook(userId, serverId string) ([]entities.JobBook, error) {
+func (repo *Impl) GetUserBook(userID, serverID string) ([]entities.JobBook, error) {
 	var jobBooks []entities.JobBook
 	return jobBooks, repo.db.GetDB().
-		Where("user_id = ? AND server_id = ?", userId, serverId).
+		Where("user_id = ? AND server_id = ?", userID, serverID).
 		Find(&jobBooks).Error
 }
 
-func (repo *JobBookRepositoryImpl) SaveUserBook(jobBook entities.JobBook) error {
+func (repo *Impl) SaveUserBook(jobBook entities.JobBook) error {
 	return repo.db.GetDB().Save(jobBook).Error
 }
 
-func (repo *JobBookRepositoryImpl) DeleteUserBook(jobBook entities.JobBook) error {
+func (repo *Impl) DeleteUserBook(jobBook entities.JobBook) error {
 	return repo.db.GetDB().Delete(jobBook).Error
 }

@@ -2,35 +2,25 @@ package application
 
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
-	"github.com/kaellybot/kaelly-configurator/models/constants"
-	alignRepo "github.com/kaellybot/kaelly-configurator/repositories/alignments"
-	jobRepo "github.com/kaellybot/kaelly-configurator/repositories/jobs"
-	"github.com/kaellybot/kaelly-configurator/services/alignments"
-	"github.com/kaellybot/kaelly-configurator/services/books"
-	"github.com/kaellybot/kaelly-configurator/services/jobs"
-	"github.com/kaellybot/kaelly-configurator/utils/databases"
+	"github.com/kaellybot/kaelly-books/models/constants"
+	alignRepo "github.com/kaellybot/kaelly-books/repositories/alignments"
+	jobRepo "github.com/kaellybot/kaelly-books/repositories/jobs"
+	"github.com/kaellybot/kaelly-books/services/alignments"
+	"github.com/kaellybot/kaelly-books/services/books"
+	"github.com/kaellybot/kaelly-books/services/jobs"
+	"github.com/kaellybot/kaelly-books/utils/databases"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
-type ApplicationInterface interface {
-	Run() error
-	Shutdown()
-}
-
-type Application struct {
-	booksService books.BooksService
-	broker       amqp.MessageBrokerInterface
-}
-
-func New() (*Application, error) {
+func New() (*Impl, error) {
 	// misc
 	db, err := databases.New()
 	if err != nil {
 		return nil, err
 	}
 
-	broker, err := amqp.New(constants.RabbitMQClientId, viper.GetString(constants.RabbitMqAddress),
+	broker, err := amqp.New(constants.RabbitMQClientID, viper.GetString(constants.RabbitMQAddress),
 		[]amqp.Binding{books.GetBinding()})
 	if err != nil {
 		return nil, err
@@ -45,17 +35,17 @@ func New() (*Application, error) {
 	alignService := alignments.New(broker, alignBooksRepo)
 	booksService := books.New(broker, jobService, alignService)
 
-	return &Application{
+	return &Impl{
 		booksService: booksService,
 		broker:       broker,
 	}, nil
 }
 
-func (app *Application) Run() error {
+func (app *Impl) Run() error {
 	return app.booksService.Consume()
 }
 
-func (app *Application) Shutdown() {
+func (app *Impl) Shutdown() {
 	app.broker.Shutdown()
 	log.Info().Msgf("Application is no longer running")
 }

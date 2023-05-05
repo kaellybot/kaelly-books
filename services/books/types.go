@@ -1,11 +1,9 @@
 package books
 
 import (
-	"errors"
-
 	amqp "github.com/kaellybot/kaelly-amqp"
-	"github.com/kaellybot/kaelly-configurator/services/alignments"
-	"github.com/kaellybot/kaelly-configurator/services/jobs"
+	"github.com/kaellybot/kaelly-books/services/alignments"
+	"github.com/kaellybot/kaelly-books/services/jobs"
 )
 
 const (
@@ -14,16 +12,12 @@ const (
 	answersRoutingkey  = "answers.books"
 )
 
-var (
-	errInvalidMessage = errors.New("Invalid books request, type is not the good one and/or the dedicated message is not filled")
-)
-
-type BooksService interface {
+type Service interface {
 	Consume() error
 }
 
-type BooksServiceImpl struct {
-	broker       amqp.MessageBrokerInterface
-	jobService   jobs.JobService
-	alignService alignments.AlignmentService
+type Impl struct {
+	broker       amqp.MessageBroker
+	jobService   jobs.Service
+	alignService alignments.Service
 }
