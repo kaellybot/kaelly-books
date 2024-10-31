@@ -3,7 +3,6 @@ package alignments
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-books/models/constants"
-	"github.com/kaellybot/kaelly-books/models/entities"
 	"github.com/kaellybot/kaelly-books/models/mappers"
 	"github.com/rs/zerolog/log"
 )
@@ -21,26 +20,24 @@ func (service *Impl) GetBookRequest(request *amqp.AlignGetBookRequest,
 		Str(constants.LogServerID, request.ServerId).
 		Msgf("Get job books request received")
 
-	books, err := service.alignBookRepo.GetBooks(request.CityId, request.OrderId,
-		request.ServerId, request.UserIds, int(request.Limit))
+	books, total, err := service.alignBookRepo.GetBooks(request.GetCityId(), request.GetOrderId(),
+		request.GetServerId(), request.GetUserIds(), int(request.GetOffset()), int(request.GetSize()))
 	if err != nil {
 		service.publishFailedGetBookAnswer(correlationID, answersRoutingkey, lg)
 		return
 	}
 
-	service.publishSucceededGetBookAnswer(correlationID, request.ServerId, answersRoutingkey, books, lg)
+	answer := mappers.MapAlignBookAnswer(request, books, total)
+	service.publishSucceededGetBookAnswer(correlationID, answersRoutingkey, answer, lg)
 }
 
-func (service *Impl) publishSucceededGetBookAnswer(correlationID, serverID,
-	answersRoutingkey string, books []entities.AlignmentBook, lg amqp.Language) {
+func (service *Impl) publishSucceededGetBookAnswer(correlationID, answersRoutingkey string,
+	answer *amqp.AlignGetBookAnswer, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_ALIGN_GET_BOOK_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-		AlignGetBookAnswer: &amqp.AlignGetBookAnswer{
-			ServerId:  serverID,
-			Believers: mappers.MapBelievers(books),
-		},
+		Type:               amqp.RabbitMQMessage_ALIGN_GET_BOOK_ANSWER,
+		Status:             amqp.RabbitMQMessage_SUCCESS,
+		Language:           lg,
+		AlignGetBookAnswer: answer,
 	}
 
 	err := service.broker.Publish(&message, amqp.ExchangeAnswer, answersRoutingkey, correlationID)

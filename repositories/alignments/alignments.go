@@ -9,23 +9,31 @@ func New(db databases.MySQLConnection) *Impl {
 	return &Impl{db: db}
 }
 
-func (repo *Impl) GetBooks(cityID, orderID, serverID string,
-	userIDs []string, limit int) ([]entities.AlignmentBook, error) {
+func (repo *Impl) GetBooks(cityID, orderID, serverID string, userIDs []string,
+	offset, limit int) ([]entities.AlignmentBook, int64, error) {
+	var total int64
 	var alignBooks []entities.AlignmentBook
-	query := repo.db.GetDB().
-		Where("server_id = ? AND user_id IN (?)", serverID, userIDs).
-		Order("level DESC").
-		Limit(limit)
+	baseQuery := repo.db.GetDB().
+		Where("server_id = ? AND user_id IN (?)", serverID, userIDs)
 
 	if len(cityID) > 0 {
-		query = query.Where("city_id = ?", cityID)
+		baseQuery = baseQuery.Where("city_id = ?", cityID)
 	}
 
 	if len(orderID) > 0 {
-		query = query.Where("order_id = ?", orderID)
+		baseQuery = baseQuery.Where("order_id = ?", orderID)
 	}
 
-	return alignBooks, query.Find(&alignBooks).Error
+	if errTotal := baseQuery.Model(&entities.AlignmentBook{}).
+		Count(&total).Error; errTotal != nil {
+		return nil, 0, errTotal
+	}
+
+	return alignBooks, total, baseQuery.
+		Order("level DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&alignBooks).Error
 }
 
 func (repo *Impl) GetUserBook(userID, serverID string) ([]entities.AlignmentBook, error) {

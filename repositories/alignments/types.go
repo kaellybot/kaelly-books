@@ -6,7 +6,8 @@ import (
 )
 
 type Repository interface {
-	GetBooks(cityID, orderID, serverID string, userIDs []string, limit int) ([]entities.AlignmentBook, error)
+	GetBooks(cityID, orderID, serverID string, userIDs []string,
+		offset, limit int) ([]entities.AlignmentBook, int64, error)
 	GetUserBook(userID, serverID string) ([]entities.AlignmentBook, error)
 	SaveUserBook(alignBook entities.AlignmentBook) error
 	DeleteUserBook(alignBook entities.AlignmentBook) error

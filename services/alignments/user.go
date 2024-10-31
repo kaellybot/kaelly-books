@@ -3,7 +3,6 @@ package alignments
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-books/models/constants"
-	"github.com/kaellybot/kaelly-books/models/entities"
 	"github.com/kaellybot/kaelly-books/models/mappers"
 	"github.com/rs/zerolog/log"
 )
@@ -26,19 +25,17 @@ func (service *Impl) UserRequest(request *amqp.AlignGetUserRequest, correlationI
 		return
 	}
 
-	service.publishSucceededGetUserAnswer(correlationID, request.ServerId, answersRoutingkey, books, lg)
+	answer := mappers.MapAlignUserAnswer(books, request.ServerId)
+	service.publishSucceededGetUserAnswer(correlationID, answersRoutingkey, answer, lg)
 }
 
-func (service *Impl) publishSucceededGetUserAnswer(correlationID, serverID, answersRoutingkey string,
-	books []entities.AlignmentBook, lg amqp.Language) {
+func (service *Impl) publishSucceededGetUserAnswer(correlationID, answersRoutingkey string,
+	answer *amqp.AlignGetUserAnswer, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-		AlignGetUserAnswer: &amqp.AlignGetUserAnswer{
-			Beliefs:  mappers.MapAlignExperiences(books),
-			ServerId: serverID,
-		},
+		Type:               amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER,
+		Status:             amqp.RabbitMQMessage_SUCCESS,
+		Language:           lg,
+		AlignGetUserAnswer: answer,
 	}
 
 	err := service.broker.Publish(&message, amqp.ExchangeAnswer, answersRoutingkey, correlationID)

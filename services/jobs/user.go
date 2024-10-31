@@ -3,7 +3,6 @@ package jobs
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-books/models/constants"
-	"github.com/kaellybot/kaelly-books/models/entities"
 	"github.com/kaellybot/kaelly-books/models/mappers"
 	"github.com/rs/zerolog/log"
 )
@@ -26,19 +25,17 @@ func (service *Impl) UserRequest(request *amqp.JobGetUserRequest, correlationID,
 		return
 	}
 
-	service.publishSucceededGetUserAnswer(correlationID, request.ServerId, answersRoutingkey, books, lg)
+	answer := mappers.MapJobUserAnswer(books, request.ServerId)
+	service.publishSucceededGetUserAnswer(correlationID, answersRoutingkey, answer, lg)
 }
 
-func (service *Impl) publishSucceededGetUserAnswer(correlationID, serverID, answersRoutingkey string,
-	books []entities.JobBook, lg amqp.Language) {
+func (service *Impl) publishSucceededGetUserAnswer(correlationID, answersRoutingkey string,
+	answer *amqp.JobGetUserAnswer, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_GET_USER_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-		JobGetUserAnswer: &amqp.JobGetUserAnswer{
-			Jobs:     mappers.MapJobExperiences(books),
-			ServerId: serverID,
-		},
+		Type:             amqp.RabbitMQMessage_JOB_GET_USER_ANSWER,
+		Status:           amqp.RabbitMQMessage_SUCCESS,
+		Language:         lg,
+		JobGetUserAnswer: answer,
 	}
 
 	err := service.broker.Publish(&message, amqp.ExchangeAnswer, answersRoutingkey, correlationID)

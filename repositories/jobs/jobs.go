@@ -9,11 +9,21 @@ func New(db databases.MySQLConnection) *Impl {
 	return &Impl{db: db}
 }
 
-func (repo *Impl) GetBooks(jobID, serverID string, userIDs []string, limit int) ([]entities.JobBook, error) {
+func (repo *Impl) GetBooks(jobID, serverID string, userIDs []string,
+	offset, limit int) ([]entities.JobBook, int64, error) {
+	var total int64
 	var jobBooks []entities.JobBook
-	return jobBooks, repo.db.GetDB().
-		Where("job_id = ? AND server_id = ? AND user_id IN (?)", jobID, serverID, userIDs).
+	baseQuery := repo.db.GetDB().
+		Where("job_id = ? AND server_id = ? AND user_id IN (?)", jobID, serverID, userIDs)
+
+	if errTotal := baseQuery.Model(&entities.JobBook{}).
+		Count(&total).Error; errTotal != nil {
+		return nil, 0, errTotal
+	}
+
+	return jobBooks, total, baseQuery.
 		Order("level DESC").
+		Offset(offset).
 		Limit(limit).
 		Find(&jobBooks).Error
 }

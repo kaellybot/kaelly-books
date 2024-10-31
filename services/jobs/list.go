@@ -3,7 +3,6 @@ package jobs
 import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-books/models/constants"
-	"github.com/kaellybot/kaelly-books/models/entities"
 	"github.com/kaellybot/kaelly-books/models/mappers"
 	"github.com/rs/zerolog/log"
 )
@@ -20,28 +19,24 @@ func (service *Impl) GetBookRequest(request *amqp.JobGetBookRequest,
 		Str(constants.LogServerID, request.ServerId).
 		Msgf("Get job books request received")
 
-	books, err := service.jobBookRepo.GetBooks(request.JobId, request.ServerId,
-		request.UserIds, int(request.Limit))
+	books, total, err := service.jobBookRepo.GetBooks(request.GetJobId(), request.GetServerId(),
+		request.GetUserIds(), int(request.GetOffset()), int(request.GetSize()))
 	if err != nil {
 		service.publishFailedGetBookAnswer(correlationID, answersRoutingkey, lg)
 		return
 	}
 
-	service.publishSucceededGetBookAnswer(correlationID, request.JobId,
-		request.ServerId, answersRoutingkey, books, lg)
+	answer := mappers.MapJobBookAnswer(request, books, total)
+	service.publishSucceededGetBookAnswer(correlationID, answersRoutingkey, answer, lg)
 }
 
-func (service *Impl) publishSucceededGetBookAnswer(correlationID, jobID, serverID,
-	answersRoutingkey string, books []entities.JobBook, lg amqp.Language) {
+func (service *Impl) publishSucceededGetBookAnswer(correlationID, answersRoutingkey string,
+	answer *amqp.JobGetBookAnswer, lg amqp.Language) {
 	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_GET_BOOK_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-		JobGetBookAnswer: &amqp.JobGetBookAnswer{
-			JobId:     jobID,
-			ServerId:  serverID,
-			Craftsmen: mappers.MapCraftsmen(books),
-		},
+		Type:             amqp.RabbitMQMessage_JOB_GET_BOOK_ANSWER,
+		Status:           amqp.RabbitMQMessage_SUCCESS,
+		Language:         lg,
+		JobGetBookAnswer: answer,
 	}
 
 	err := service.broker.Publish(&message, amqp.ExchangeAnswer, answersRoutingkey, correlationID)

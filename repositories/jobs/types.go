@@ -6,7 +6,8 @@ import (
 )
 
 type Repository interface {
-	GetBooks(jobID, serverID string, userIDs []string, limit int) ([]entities.JobBook, error)
+	GetBooks(jobID, serverID string, userIDs []string,
+		offset, limit int) ([]entities.JobBook, int64, error)
 	GetUserBook(userID, serverID string) ([]entities.JobBook, error)
 	SaveUserBook(jobBook entities.JobBook) error
 	DeleteUserBook(jobBook entities.JobBook) error
