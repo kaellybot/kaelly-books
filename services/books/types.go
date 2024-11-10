@@ -9,7 +9,6 @@ import (
 const (
 	requestQueueName   = "books-requests"
 	requestsRoutingkey = "requests.books"
-	answersRoutingkey  = "answers.books"
 )
 
 type Service interface {

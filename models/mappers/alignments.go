@@ -6,7 +6,7 @@ import (
 )
 
 func MapAlignBookAnswer(request *amqp.AlignGetBookRequest, books []entities.AlignmentBook,
-	total int64) *amqp.AlignGetBookAnswer {
+	total int64, lg amqp.Language) *amqp.RabbitMQMessage {
 	believers := make([]*amqp.AlignGetBookAnswer_Believer, 0)
 	for _, book := range books {
 		believers = append(believers, &amqp.AlignGetBookAnswer_Believer{
@@ -23,19 +23,32 @@ func MapAlignBookAnswer(request *amqp.AlignGetBookRequest, books []entities.Alig
 		pages++
 	}
 
-	return &amqp.AlignGetBookAnswer{
-		CityId:    request.GetCityId(),
-		OrderId:   request.GetOrderId(),
-		ServerId:  request.GetServerId(),
-		Believers: believers,
-		Page:      page,
-		Pages:     pages,
-		Total:     int32(total),
+	return &amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_ALIGN_GET_BOOK_ANSWER,
+		Status:   amqp.RabbitMQMessage_SUCCESS,
+		Language: lg,
+		AlignGetBookAnswer: &amqp.AlignGetBookAnswer{
+			CityId:    request.GetCityId(),
+			OrderId:   request.GetOrderId(),
+			ServerId:  request.GetServerId(),
+			Believers: believers,
+			Page:      page,
+			Pages:     pages,
+			Total:     int32(total),
+		},
+	}
+}
+
+func MapAlignSetAnswer(lg amqp.Language) *amqp.RabbitMQMessage {
+	return &amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_ALIGN_SET_ANSWER,
+		Status:   amqp.RabbitMQMessage_SUCCESS,
+		Language: lg,
 	}
 }
 
 func MapAlignUserAnswer(books []entities.AlignmentBook,
-	serverID string) *amqp.AlignGetUserAnswer {
+	serverID string, lg amqp.Language) *amqp.RabbitMQMessage {
 	alignXp := make([]*amqp.AlignGetUserAnswer_AlignExperience, 0)
 	for _, book := range books {
 		alignXp = append(alignXp, &amqp.AlignGetUserAnswer_AlignExperience{
@@ -45,8 +58,13 @@ func MapAlignUserAnswer(books []entities.AlignmentBook,
 		})
 	}
 
-	return &amqp.AlignGetUserAnswer{
-		Beliefs:  alignXp,
-		ServerId: serverID,
+	return &amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER,
+		Status:   amqp.RabbitMQMessage_SUCCESS,
+		Language: lg,
+		AlignGetUserAnswer: &amqp.AlignGetUserAnswer{
+			Beliefs:  alignXp,
+			ServerId: serverID,
+		},
 	}
 }

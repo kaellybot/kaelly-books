@@ -4,17 +4,19 @@ import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-books/models/constants"
 	"github.com/kaellybot/kaelly-books/models/entities"
+	"github.com/kaellybot/kaelly-books/models/mappers"
+	"github.com/kaellybot/kaelly-books/utils/replies"
 	"github.com/rs/zerolog/log"
 )
 
-func (service *Impl) SetRequest(request *amqp.JobSetRequest, correlationID,
-	answersRoutingkey string, lg amqp.Language) {
+func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.JobSetRequest,
+	lg amqp.Language) {
 	if !isValidJobSetRequest(request) {
-		service.publishFailedSetAnswer(correlationID, answersRoutingkey, lg)
+		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_SET_ANSWER, lg)
 		return
 	}
 
-	log.Info().Str(constants.LogCorrelationID, correlationID).
+	log.Info().Str(constants.LogCorrelationID, ctx.CorrelationID).
 		Str(constants.LogUserID, request.UserId).
 		Str(constants.LogJobID, request.JobId).
 		Str(constants.LogServerID, request.ServerId).
@@ -34,42 +36,12 @@ func (service *Impl) SetRequest(request *amqp.JobSetRequest, correlationID,
 		err = service.jobBookRepo.DeleteUserBook(jobBook)
 	}
 	if err != nil {
-		service.publishFailedSetAnswer(correlationID, answersRoutingkey, lg)
+		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_SET_ANSWER, lg)
 		return
 	}
 
-	service.publishSucceededSetAnswer(correlationID, answersRoutingkey, lg)
-}
-
-func (service *Impl) publishSucceededSetAnswer(correlationID, answersRoutingkey string, lg amqp.Language) {
-	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_SET_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-	}
-
-	err := service.broker.Publish(&message, amqp.ExchangeAnswer, answersRoutingkey, correlationID)
-	if err != nil {
-		log.Error().Err(err).
-			Str(constants.LogCorrelationID, correlationID).
-			Msgf("Cannot publish via broker, request ignored")
-	}
-}
-
-func (service *Impl) publishFailedSetAnswer(correlationID, answersRoutingkey string, lg amqp.Language) {
-	message := amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_JOB_SET_ANSWER,
-		Status:   amqp.RabbitMQMessage_FAILED,
-		Language: lg,
-	}
-
-	err := service.broker.Publish(&message, amqp.ExchangeAnswer,
-		answersRoutingkey, correlationID)
-	if err != nil {
-		log.Error().Err(err).
-			Str(constants.LogCorrelationID, correlationID).
-			Msgf("Cannot publish via broker, request ignored")
-	}
+	answer := mappers.MapJobSetAnswer(lg)
+	replies.SucceededAnswer(ctx, service.broker, answer)
 }
 
 func isValidJobSetRequest(request *amqp.JobSetRequest) bool {

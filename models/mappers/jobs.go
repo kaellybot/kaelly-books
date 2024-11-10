@@ -6,7 +6,7 @@ import (
 )
 
 func MapJobBookAnswer(request *amqp.JobGetBookRequest, books []entities.JobBook,
-	total int64) *amqp.JobGetBookAnswer {
+	total int64, lg amqp.Language) *amqp.RabbitMQMessage {
 	craftsmen := make([]*amqp.JobGetBookAnswer_Craftsman, 0)
 	for _, book := range books {
 		craftsmen = append(craftsmen, &amqp.JobGetBookAnswer_Craftsman{
@@ -21,17 +21,31 @@ func MapJobBookAnswer(request *amqp.JobGetBookRequest, books []entities.JobBook,
 		pages++
 	}
 
-	return &amqp.JobGetBookAnswer{
-		JobId:     request.GetJobId(),
-		ServerId:  request.GetServerId(),
-		Craftsmen: craftsmen,
-		Page:      page,
-		Pages:     pages,
-		Total:     int32(total),
+	return &amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_JOB_GET_BOOK_ANSWER,
+		Status:   amqp.RabbitMQMessage_SUCCESS,
+		Language: lg,
+		JobGetBookAnswer: &amqp.JobGetBookAnswer{
+			JobId:     request.GetJobId(),
+			ServerId:  request.GetServerId(),
+			Craftsmen: craftsmen,
+			Page:      page,
+			Pages:     pages,
+			Total:     int32(total),
+		},
 	}
 }
 
-func MapJobUserAnswer(books []entities.JobBook, serverID string) *amqp.JobGetUserAnswer {
+func MapJobSetAnswer(lg amqp.Language) *amqp.RabbitMQMessage {
+	return &amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_JOB_SET_ANSWER,
+		Status:   amqp.RabbitMQMessage_SUCCESS,
+		Language: lg,
+	}
+}
+
+func MapJobUserAnswer(books []entities.JobBook, serverID string,
+	lg amqp.Language) *amqp.RabbitMQMessage {
 	jobXp := make([]*amqp.JobGetUserAnswer_JobExperience, 0)
 	for _, book := range books {
 		jobXp = append(jobXp, &amqp.JobGetUserAnswer_JobExperience{
@@ -40,8 +54,13 @@ func MapJobUserAnswer(books []entities.JobBook, serverID string) *amqp.JobGetUse
 		})
 	}
 
-	return &amqp.JobGetUserAnswer{
-		Jobs:     jobXp,
-		ServerId: serverID,
+	return &amqp.RabbitMQMessage{
+		Type:     amqp.RabbitMQMessage_JOB_GET_USER_ANSWER,
+		Status:   amqp.RabbitMQMessage_SUCCESS,
+		Language: lg,
+		JobGetUserAnswer: &amqp.JobGetUserAnswer{
+			Jobs:     jobXp,
+			ServerId: serverID,
+		},
 	}
 }

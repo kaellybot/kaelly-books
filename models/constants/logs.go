@@ -9,6 +9,7 @@ const (
 	LogJobID         = "jobID"
 	LogCityID        = "cityID"
 	LogOrderID       = "orderID"
+	LogReplyTo       = "replyTo"
 	LogServerID      = "serverID"
 
 	LogLevelFallback = zerolog.InfoLevel
