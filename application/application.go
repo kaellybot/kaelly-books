@@ -20,11 +20,8 @@ func New() (*Impl, error) {
 		return nil, err
 	}
 
-	broker, err := amqp.New(constants.RabbitMQClientID, viper.GetString(constants.RabbitMQAddress),
-		[]amqp.Binding{books.GetBinding()})
-	if err != nil {
-		return nil, err
-	}
+	broker := amqp.New(constants.RabbitMQClientID, viper.GetString(constants.RabbitMQAddress),
+		amqp.WithBindings(books.GetBinding()))
 
 	// repositories
 	jobBooksRepo := jobRepo.New(db)
@@ -42,7 +39,12 @@ func New() (*Impl, error) {
 }
 
 func (app *Impl) Run() error {
-	return app.booksService.Consume()
+	if err := app.broker.Run(); err != nil {
+		return err
+	}
+
+	app.booksService.Consume()
+	return nil
 }
 
 func (app *Impl) Shutdown() {
