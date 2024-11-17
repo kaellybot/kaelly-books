@@ -21,7 +21,7 @@ func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.AlignSetRequest,
 		Str(constants.LogCityID, request.CityId).
 		Str(constants.LogOrderID, request.OrderId).
 		Str(constants.LogServerID, request.ServerId).
-		Msgf("Set job request received")
+		Msgf("Set align request received")
 
 	jobBook := entities.AlignmentBook{
 		UserID:   request.UserId,
