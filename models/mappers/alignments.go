@@ -18,8 +18,8 @@ func MapAlignBookAnswer(request *amqp.AlignGetBookRequest, books []entities.Alig
 	}
 
 	page := request.GetOffset() / request.GetSize()
-	pages := int32(total) / request.GetSize()
-	if int32(total)%request.GetSize() != 0 {
+	pages := total / request.GetSize()
+	if total%request.GetSize() != 0 {
 		pages++
 	}
 
@@ -34,7 +34,7 @@ func MapAlignBookAnswer(request *amqp.AlignGetBookRequest, books []entities.Alig
 			Believers: believers,
 			Page:      page,
 			Pages:     pages,
-			Total:     int32(total),
+			Total:     total,
 		},
 	}
 }

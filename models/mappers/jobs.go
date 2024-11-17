@@ -16,8 +16,8 @@ func MapJobBookAnswer(request *amqp.JobGetBookRequest, books []entities.JobBook,
 	}
 
 	page := request.GetOffset() / request.GetSize()
-	pages := int32(total) / request.GetSize()
-	if int32(total)%request.GetSize() != 0 {
+	pages := total / request.GetSize()
+	if total%request.GetSize() != 0 {
 		pages++
 	}
 
@@ -31,7 +31,7 @@ func MapJobBookAnswer(request *amqp.JobGetBookRequest, books []entities.JobBook,
 			Craftsmen: craftsmen,
 			Page:      page,
 			Pages:     pages,
-			Total:     int32(total),
+			Total:     total,
 		},
 	}
 }
