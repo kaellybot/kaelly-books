@@ -16,15 +16,10 @@ import (
 
 func New() (*Impl, error) {
 	// misc
-	db, err := databases.New()
-	if err != nil {
-		return nil, err
-	}
-
 	broker := amqp.New(constants.RabbitMQClientID, viper.GetString(constants.RabbitMQAddress),
 		amqp.WithBindings(books.GetBinding()))
-
-	probes := insights.NewProbes(db.IsConnected, broker.IsConnected)
+	db := databases.New()
+	probes := insights.NewProbes(broker.IsConnected, db.IsConnected)
 	prom := insights.NewPrometheusMetrics()
 
 	// repositories
@@ -39,6 +34,7 @@ func New() (*Impl, error) {
 	return &Impl{
 		booksService: booksService,
 		broker:       broker,
+		db:           db,
 		probes:       probes,
 		prom:         prom,
 	}, nil
@@ -47,6 +43,10 @@ func New() (*Impl, error) {
 func (app *Impl) Run() error {
 	app.probes.ListenAndServe()
 	app.prom.ListenAndServe()
+
+	if err := app.db.Run(); err != nil {
+		return err
+	}
 
 	if err := app.broker.Run(); err != nil {
 		return err
@@ -58,6 +58,7 @@ func (app *Impl) Run() error {
 
 func (app *Impl) Shutdown() {
 	app.broker.Shutdown()
+	app.db.Shutdown()
 	app.prom.Shutdown()
 	app.probes.Shutdown()
 	log.Info().Msgf("Application is no longer running")

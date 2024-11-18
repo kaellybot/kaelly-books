@@ -43,7 +43,7 @@ func (probes *probes) ListenAndServe() {
 	go func() {
 		log.Info().Msgf("Exposing Probes...")
 		err := probes.server.ListenAndServe()
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
 			log.Error().Err(err).Msgf("Cannot listen and serve probes")
 		}
 	}()

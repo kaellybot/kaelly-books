@@ -36,7 +36,7 @@ func (prom *prom) ListenAndServe() {
 	go func() {
 		log.Info().Msgf("Exposing Prometheus metrics...")
 		err := prom.server.ListenAndServe()
-		if err != nil {
+		if err != nil && err != http.ErrServerClosed {
 			log.Error().Err(err).Msgf("Cannot listen and serve Prometheus metrics")
 		}
 	}()
