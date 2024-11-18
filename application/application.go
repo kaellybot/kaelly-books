@@ -9,6 +9,7 @@ import (
 	"github.com/kaellybot/kaelly-books/services/books"
 	"github.com/kaellybot/kaelly-books/services/jobs"
 	"github.com/kaellybot/kaelly-books/utils/databases"
+	"github.com/kaellybot/kaelly-books/utils/insights"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
@@ -23,6 +24,9 @@ func New() (*Impl, error) {
 	broker := amqp.New(constants.RabbitMQClientID, viper.GetString(constants.RabbitMQAddress),
 		amqp.WithBindings(books.GetBinding()))
 
+	probes := insights.NewProbes(db.IsConnected, broker.IsConnected)
+	prom := insights.NewPrometheusMetrics()
+
 	// repositories
 	jobBooksRepo := jobRepo.New(db)
 	alignBooksRepo := alignRepo.New(db)
@@ -35,10 +39,15 @@ func New() (*Impl, error) {
 	return &Impl{
 		booksService: booksService,
 		broker:       broker,
+		probes:       probes,
+		prom:         prom,
 	}, nil
 }
 
 func (app *Impl) Run() error {
+	app.probes.ListenAndServe()
+	app.prom.ListenAndServe()
+
 	if err := app.broker.Run(); err != nil {
 		return err
 	}
@@ -49,5 +58,7 @@ func (app *Impl) Run() error {
 
 func (app *Impl) Shutdown() {
 	app.broker.Shutdown()
+	app.prom.Shutdown()
+	app.probes.Shutdown()
 	log.Info().Msgf("Application is no longer running")
 }

@@ -12,6 +12,7 @@ import (
 
 type MySQLConnection interface {
 	GetDB() *gorm.DB
+	IsConnected() bool
 	Shutdown()
 }
 
@@ -38,11 +39,31 @@ func (connection *MySQLConnectionImpl) GetDB() *gorm.DB {
 	return connection.db
 }
 
+func (connection *MySQLConnectionImpl) IsConnected() bool {
+	if connection.db == nil {
+		return false
+	}
+
+	dbSQL, errSQL := connection.db.DB()
+	if errSQL != nil {
+		return false
+	}
+
+	if errPing := dbSQL.Ping(); errPing != nil {
+		return false
+	}
+
+	return true
+}
+
 func (connection *MySQLConnectionImpl) Shutdown() {
 	dbSQL, err := connection.db.DB()
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to kill connection from database")
+		log.Error().Err(err).Msgf("Failed to shutdown database connection")
 		return
 	}
-	dbSQL.Close()
+
+	if errClose := dbSQL.Close(); errClose != nil {
+		log.Error().Err(errClose).Msgf("Failed to shutdown database connection")
+	}
 }
