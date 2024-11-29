@@ -9,7 +9,7 @@ import (
 )
 
 func (service *Impl) GetBookRequest(ctx amqp.Context, request *amqp.AlignGetBookRequest,
-	lg amqp.Language) {
+	game amqp.Game, lg amqp.Language) {
 	if !isValidAlignGetRequest(request) {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_ALIGN_GET_BOOK_ANSWER, lg)
 		return
@@ -22,7 +22,7 @@ func (service *Impl) GetBookRequest(ctx amqp.Context, request *amqp.AlignGetBook
 		Msgf("Get align books request received")
 
 	books, total, err := service.alignBookRepo.GetBooks(request.GetCityId(), request.GetOrderId(),
-		request.GetServerId(), request.GetUserIds(), int(request.GetOffset()), int(request.GetSize()))
+		request.GetServerId(), request.GetUserIds(), game, int(request.GetOffset()), int(request.GetSize()))
 	if err != nil {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_ALIGN_GET_BOOK_ANSWER, lg)
 		return

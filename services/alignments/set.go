@@ -10,7 +10,7 @@ import (
 )
 
 func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.AlignSetRequest,
-	lg amqp.Language) {
+	game amqp.Game, lg amqp.Language) {
 	if !isValidAlignSetRequest(request) {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_ALIGN_SET_ANSWER, lg)
 		return
@@ -28,6 +28,7 @@ func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.AlignSetRequest,
 		CityID:   request.CityId,
 		OrderID:  request.OrderId,
 		ServerID: request.ServerId,
+		Game:     game,
 		Level:    request.Level,
 	}
 

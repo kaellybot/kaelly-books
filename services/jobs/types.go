@@ -6,9 +6,9 @@ import (
 )
 
 type Service interface {
-	GetBookRequest(ctx amqp.Context, request *amqp.JobGetBookRequest, lg amqp.Language)
-	SetRequest(ctx amqp.Context, request *amqp.JobSetRequest, lg amqp.Language)
-	UserRequest(ctx amqp.Context, request *amqp.JobGetUserRequest, lg amqp.Language)
+	GetBookRequest(ctx amqp.Context, request *amqp.JobGetBookRequest, game amqp.Game, lg amqp.Language)
+	SetRequest(ctx amqp.Context, request *amqp.JobSetRequest, game amqp.Game, lg amqp.Language)
+	UserRequest(ctx amqp.Context, request *amqp.JobGetUserRequest, game amqp.Game, lg amqp.Language)
 }
 
 type Impl struct {

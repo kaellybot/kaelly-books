@@ -1,6 +1,7 @@
 package jobs
 
 import (
+	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-books/models/entities"
 	"github.com/kaellybot/kaelly-books/utils/databases"
 )
@@ -10,11 +11,11 @@ func New(db databases.MySQLConnection) *Impl {
 }
 
 func (repo *Impl) GetBooks(jobID, serverID string, userIDs []string,
-	offset, limit int) ([]entities.JobBook, int64, error) {
+	game amqp.Game, offset, limit int) ([]entities.JobBook, int64, error) {
 	var total int64
 	var jobBooks []entities.JobBook
 	baseQuery := repo.db.GetDB().
-		Where("job_id = ? AND server_id = ? AND user_id IN (?)", jobID, serverID, userIDs)
+		Where("job_id = ? AND server_id = ? AND game = ? AND user_id IN (?)", jobID, serverID, game, userIDs)
 
 	if errTotal := baseQuery.Model(&entities.JobBook{}).
 		Count(&total).Error; errTotal != nil {
@@ -28,10 +29,10 @@ func (repo *Impl) GetBooks(jobID, serverID string, userIDs []string,
 		Find(&jobBooks).Error
 }
 
-func (repo *Impl) GetUserBook(userID, serverID string) ([]entities.JobBook, error) {
+func (repo *Impl) GetUserBook(userID, serverID string, game amqp.Game) ([]entities.JobBook, error) {
 	var jobBooks []entities.JobBook
 	return jobBooks, repo.db.GetDB().
-		Where("user_id = ? AND server_id = ?", userID, serverID).
+		Where("user_id = ? AND server_id = ? AND game = ?", userID, serverID, game).
 		Find(&jobBooks).Error
 }
 

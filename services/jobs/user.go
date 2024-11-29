@@ -9,7 +9,7 @@ import (
 )
 
 func (service *Impl) UserRequest(ctx amqp.Context, request *amqp.JobGetUserRequest,
-	lg amqp.Language) {
+	game amqp.Game, lg amqp.Language) {
 	if !isValidJobGetUserRequest(request) {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_GET_USER_ANSWER, lg)
 		return
@@ -20,7 +20,7 @@ func (service *Impl) UserRequest(ctx amqp.Context, request *amqp.JobGetUserReque
 		Str(constants.LogServerID, request.ServerId).
 		Msgf("Get job user request received")
 
-	books, err := service.jobBookRepo.GetUserBook(request.UserId, request.ServerId)
+	books, err := service.jobBookRepo.GetUserBook(request.UserId, request.ServerId, game)
 	if err != nil {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_GET_USER_ANSWER, lg)
 		return

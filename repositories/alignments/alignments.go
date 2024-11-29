@@ -1,6 +1,7 @@
 package alignments
 
 import (
+	amqp "github.com/kaellybot/kaelly-amqp"
 	"github.com/kaellybot/kaelly-books/models/entities"
 	"github.com/kaellybot/kaelly-books/utils/databases"
 )
@@ -10,11 +11,11 @@ func New(db databases.MySQLConnection) *Impl {
 }
 
 func (repo *Impl) GetBooks(cityID, orderID, serverID string, userIDs []string,
-	offset, limit int) ([]entities.AlignmentBook, int64, error) {
+	game amqp.Game, offset, limit int) ([]entities.AlignmentBook, int64, error) {
 	var total int64
 	var alignBooks []entities.AlignmentBook
 	baseQuery := repo.db.GetDB().
-		Where("server_id = ? AND user_id IN (?)", serverID, userIDs)
+		Where("server_id = ? AND game = ? AND user_id IN (?)", serverID, game, userIDs)
 
 	if len(cityID) > 0 {
 		baseQuery = baseQuery.Where("city_id = ?", cityID)
@@ -36,10 +37,10 @@ func (repo *Impl) GetBooks(cityID, orderID, serverID string, userIDs []string,
 		Find(&alignBooks).Error
 }
 
-func (repo *Impl) GetUserBook(userID, serverID string) ([]entities.AlignmentBook, error) {
+func (repo *Impl) GetUserBook(userID, serverID string, game amqp.Game) ([]entities.AlignmentBook, error) {
 	var alignBooks []entities.AlignmentBook
 	return alignBooks, repo.db.GetDB().
-		Where("user_id = ? AND server_id = ?", userID, serverID).
+		Where("user_id = ? AND server_id = ? AND game = ?", userID, serverID, game).
 		Find(&alignBooks).Error
 }
 

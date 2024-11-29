@@ -9,7 +9,7 @@ import (
 )
 
 func (service *Impl) GetBookRequest(ctx amqp.Context, request *amqp.JobGetBookRequest,
-	lg amqp.Language) {
+	game amqp.Game, lg amqp.Language) {
 	if !isValidJobGetRequest(request) {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_GET_BOOK_ANSWER, lg)
 		return
@@ -21,7 +21,7 @@ func (service *Impl) GetBookRequest(ctx amqp.Context, request *amqp.JobGetBookRe
 		Msgf("Get job books request received")
 
 	books, total, err := service.jobBookRepo.GetBooks(request.GetJobId(), request.GetServerId(),
-		request.GetUserIds(), int(request.GetOffset()), int(request.GetSize()))
+		request.GetUserIds(), game, int(request.GetOffset()), int(request.GetSize()))
 	if err != nil {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_GET_BOOK_ANSWER, lg)
 		return

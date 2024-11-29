@@ -10,7 +10,7 @@ import (
 )
 
 func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.JobSetRequest,
-	lg amqp.Language) {
+	game amqp.Game, lg amqp.Language) {
 	if !isValidJobSetRequest(request) {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_SET_ANSWER, lg)
 		return
@@ -26,6 +26,7 @@ func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.JobSetRequest,
 		UserID:   request.UserId,
 		JobID:    request.JobId,
 		ServerID: request.ServerId,
+		Game:     game,
 		Level:    request.Level,
 	}
 

@@ -9,7 +9,7 @@ import (
 )
 
 func (service *Impl) UserRequest(ctx amqp.Context, request *amqp.AlignGetUserRequest,
-	lg amqp.Language) {
+	game amqp.Game, lg amqp.Language) {
 	if !isValidAlignGetUserRequest(request) {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER, lg)
 		return
@@ -20,7 +20,7 @@ func (service *Impl) UserRequest(ctx amqp.Context, request *amqp.AlignGetUserReq
 		Str(constants.LogServerID, request.ServerId).
 		Msgf("Get job user request received")
 
-	books, err := service.alignBookRepo.GetUserBook(request.UserId, request.ServerId)
+	books, err := service.alignBookRepo.GetUserBook(request.UserId, request.ServerId, game)
 	if err != nil {
 		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER, lg)
 		return
