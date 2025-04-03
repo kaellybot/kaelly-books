@@ -1,11 +1,11 @@
 module github.com/kaellybot/kaelly-books
 
-go 1.22
+go 1.24
 
 // replace github.com/kaellybot/kaelly-amqp => ../kaelly-amqp
 
 require (
-	github.com/kaellybot/kaelly-amqp v0.0.9-beta5
+	github.com/kaellybot/kaelly-amqp v0.0.10-beta4
 	github.com/prometheus/client_golang v1.20.4
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.19.0
