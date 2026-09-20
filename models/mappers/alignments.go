@@ -5,8 +5,9 @@ import (
 	"github.com/kaellybot/kaelly-books/models/entities"
 )
 
-func MapAlignBookAnswer(request *amqp.AlignGetBookRequest, books []entities.AlignmentBook,
-	total int64, lg amqp.Language) *amqp.RabbitMQMessage {
+func MapAlignBookAnswer(message *amqp.RabbitMQMessage, books []entities.AlignmentBook,
+	total int64) *amqp.RabbitMQMessage {
+	request := message.GetAlignGetBookRequest()
 	believers := make([]*amqp.AlignGetBookAnswer_Believer, 0)
 	for _, book := range books {
 		believers = append(believers, &amqp.AlignGetBookAnswer_Believer{
@@ -23,32 +24,27 @@ func MapAlignBookAnswer(request *amqp.AlignGetBookRequest, books []entities.Alig
 		pages++
 	}
 
-	return &amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_ALIGN_GET_BOOK_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-		AlignGetBookAnswer: &amqp.AlignGetBookAnswer{
-			CityId:    request.GetCityId(),
-			OrderId:   request.GetOrderId(),
-			ServerId:  request.GetServerId(),
-			Believers: believers,
-			Page:      page,
-			Pages:     pages,
-			Total:     total,
-		},
+	answer := amqp.NewReply(message, amqp.RabbitMQMessage_ALIGN_GET_BOOK_ANSWER,
+		amqp.RabbitMQMessage_SUCCESS)
+	answer.AlignGetBookAnswer = &amqp.AlignGetBookAnswer{
+		CityId:    request.GetCityId(),
+		OrderId:   request.GetOrderId(),
+		ServerId:  request.GetServerId(),
+		Believers: believers,
+		Page:      page,
+		Pages:     pages,
+		Total:     total,
 	}
+	return answer
 }
 
-func MapAlignSetAnswer(lg amqp.Language) *amqp.RabbitMQMessage {
-	return &amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_ALIGN_SET_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-	}
+func MapAlignSetAnswer(message *amqp.RabbitMQMessage) *amqp.RabbitMQMessage {
+	return amqp.NewReply(message, amqp.RabbitMQMessage_ALIGN_SET_ANSWER,
+		amqp.RabbitMQMessage_SUCCESS)
 }
 
-func MapAlignUserAnswer(books []entities.AlignmentBook,
-	serverID string, lg amqp.Language) *amqp.RabbitMQMessage {
+func MapAlignUserAnswer(message *amqp.RabbitMQMessage,
+	books []entities.AlignmentBook) *amqp.RabbitMQMessage {
 	alignXp := make([]*amqp.AlignGetUserAnswer_AlignExperience, 0)
 	for _, book := range books {
 		alignXp = append(alignXp, &amqp.AlignGetUserAnswer_AlignExperience{
@@ -58,13 +54,11 @@ func MapAlignUserAnswer(books []entities.AlignmentBook,
 		})
 	}
 
-	return &amqp.RabbitMQMessage{
-		Type:     amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER,
-		Status:   amqp.RabbitMQMessage_SUCCESS,
-		Language: lg,
-		AlignGetUserAnswer: &amqp.AlignGetUserAnswer{
-			Beliefs:  alignXp,
-			ServerId: serverID,
-		},
+	answer := amqp.NewReply(message, amqp.RabbitMQMessage_ALIGN_GET_USER_ANSWER,
+		amqp.RabbitMQMessage_SUCCESS)
+	answer.AlignGetUserAnswer = &amqp.AlignGetUserAnswer{
+		Beliefs:  alignXp,
+		ServerId: message.GetAlignGetUserRequest().GetServerId(),
 	}
+	return answer
 }

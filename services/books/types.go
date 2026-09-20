@@ -15,6 +15,8 @@ type Service interface {
 	Consume()
 }
 
+type requestHandler func(ctx amqp.Context, message *amqp.RabbitMQMessage)
+
 type Impl struct {
 	broker       amqp.MessageBroker
 	jobService   jobs.Service

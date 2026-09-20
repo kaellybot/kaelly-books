@@ -8,25 +8,27 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (service *Impl) UserRequest(ctx amqp.Context, request *amqp.JobGetUserRequest,
-	game amqp.Game, lg amqp.Language) {
+func (service *Impl) UserRequest(ctx amqp.Context, message *amqp.RabbitMQMessage) {
+	request := message.GetJobGetUserRequest()
 	if !isValidJobGetUserRequest(request) {
-		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_GET_USER_ANSWER, lg)
+		replies.FailedAnswer(ctx, service.broker, message, amqp.RabbitMQMessage_JOB_GET_USER_ANSWER)
 		return
 	}
 
 	log.Info().Str(constants.LogCorrelationID, ctx.CorrelationID).
-		Str(constants.LogUserID, request.UserId).
-		Str(constants.LogServerID, request.ServerId).
+		Str(constants.LogGame, message.GetGame().String()).
+		Str(constants.LogUserID, request.GetUserId()).
+		Str(constants.LogServerID, request.GetServerId()).
 		Msgf("Get job user request received")
 
-	books, err := service.jobBookRepo.GetUserBook(request.UserId, request.ServerId, game)
+	books, err := service.jobBookRepo.GetUserBook(request.GetUserId(), request.GetServerId(),
+		message.GetGame())
 	if err != nil {
-		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_GET_USER_ANSWER, lg)
+		replies.FailedAnswer(ctx, service.broker, message, amqp.RabbitMQMessage_JOB_GET_USER_ANSWER)
 		return
 	}
 
-	answer := mappers.MapJobUserAnswer(books, request.ServerId, lg)
+	answer := mappers.MapJobUserAnswer(message, books)
 	replies.SucceededAnswer(ctx, service.broker, answer)
 }
 

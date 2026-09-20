@@ -9,39 +9,40 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.JobSetRequest,
-	game amqp.Game, lg amqp.Language) {
+func (service *Impl) SetRequest(ctx amqp.Context, message *amqp.RabbitMQMessage) {
+	request := message.GetJobSetRequest()
 	if !isValidJobSetRequest(request) {
-		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_SET_ANSWER, lg)
+		replies.FailedAnswer(ctx, service.broker, message, amqp.RabbitMQMessage_JOB_SET_ANSWER)
 		return
 	}
 
 	log.Info().Str(constants.LogCorrelationID, ctx.CorrelationID).
-		Str(constants.LogUserID, request.UserId).
-		Str(constants.LogJobID, request.JobId).
-		Str(constants.LogServerID, request.ServerId).
+		Str(constants.LogGame, message.GetGame().String()).
+		Str(constants.LogUserID, request.GetUserId()).
+		Str(constants.LogJobID, request.GetJobId()).
+		Str(constants.LogServerID, request.GetServerId()).
 		Msgf("Set job request received")
 
 	jobBook := entities.JobBook{
-		UserID:   request.UserId,
-		JobID:    request.JobId,
-		ServerID: request.ServerId,
-		Game:     game,
-		Level:    request.Level,
+		UserID:   request.GetUserId(),
+		JobID:    request.GetJobId(),
+		ServerID: request.GetServerId(),
+		Game:     message.GetGame(),
+		Level:    request.GetLevel(),
 	}
 
 	var err error
-	if request.Level > 0 {
+	if request.GetLevel() > 0 {
 		err = service.jobBookRepo.SaveUserBook(jobBook)
 	} else {
 		err = service.jobBookRepo.DeleteUserBook(jobBook)
 	}
 	if err != nil {
-		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_JOB_SET_ANSWER, lg)
+		replies.FailedAnswer(ctx, service.broker, message, amqp.RabbitMQMessage_JOB_SET_ANSWER)
 		return
 	}
 
-	answer := mappers.MapJobSetAnswer(lg)
+	answer := mappers.MapJobSetAnswer(message)
 	replies.SucceededAnswer(ctx, service.broker, answer)
 }
 

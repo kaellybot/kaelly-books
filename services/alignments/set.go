@@ -9,41 +9,42 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func (service *Impl) SetRequest(ctx amqp.Context, request *amqp.AlignSetRequest,
-	game amqp.Game, lg amqp.Language) {
+func (service *Impl) SetRequest(ctx amqp.Context, message *amqp.RabbitMQMessage) {
+	request := message.GetAlignSetRequest()
 	if !isValidAlignSetRequest(request) {
-		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_ALIGN_SET_ANSWER, lg)
+		replies.FailedAnswer(ctx, service.broker, message, amqp.RabbitMQMessage_ALIGN_SET_ANSWER)
 		return
 	}
 
 	log.Info().Str(constants.LogCorrelationID, ctx.CorrelationID).
-		Str(constants.LogUserID, request.UserId).
-		Str(constants.LogCityID, request.CityId).
-		Str(constants.LogOrderID, request.OrderId).
-		Str(constants.LogServerID, request.ServerId).
+		Str(constants.LogGame, message.GetGame().String()).
+		Str(constants.LogUserID, request.GetUserId()).
+		Str(constants.LogCityID, request.GetCityId()).
+		Str(constants.LogOrderID, request.GetOrderId()).
+		Str(constants.LogServerID, request.GetServerId()).
 		Msgf("Set align request received")
 
-	jobBook := entities.AlignmentBook{
-		UserID:   request.UserId,
-		CityID:   request.CityId,
-		OrderID:  request.OrderId,
-		ServerID: request.ServerId,
-		Game:     game,
-		Level:    request.Level,
+	alignBook := entities.AlignmentBook{
+		UserID:   request.GetUserId(),
+		CityID:   request.GetCityId(),
+		OrderID:  request.GetOrderId(),
+		ServerID: request.GetServerId(),
+		Game:     message.GetGame(),
+		Level:    request.GetLevel(),
 	}
 
 	var err error
-	if request.Level > 0 {
-		err = service.alignBookRepo.SaveUserBook(jobBook)
+	if request.GetLevel() > 0 {
+		err = service.alignBookRepo.SaveUserBook(alignBook)
 	} else {
-		err = service.alignBookRepo.DeleteUserBook(jobBook)
+		err = service.alignBookRepo.DeleteUserBook(alignBook)
 	}
 	if err != nil {
-		replies.FailedAnswer(ctx, service.broker, amqp.RabbitMQMessage_ALIGN_SET_ANSWER, lg)
+		replies.FailedAnswer(ctx, service.broker, message, amqp.RabbitMQMessage_ALIGN_SET_ANSWER)
 		return
 	}
 
-	answer := mappers.MapAlignSetAnswer(lg)
+	answer := mappers.MapAlignSetAnswer(message)
 	replies.SucceededAnswer(ctx, service.broker, answer)
 }
 

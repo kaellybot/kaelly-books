@@ -8,8 +8,8 @@ type JobBook struct {
 	ServerID string    `gorm:"primaryKey;type:varchar(100);"`
 	Game     amqp.Game `gorm:"primaryKey"`
 	Level    int64
-	Job      Job    `gorm:"foreignKey:JobID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Server   Server `gorm:"foreignKey:ServerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Job      Job    `gorm:"foreignKey:JobID,Game;references:ID,Game;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Server   Server `gorm:"foreignKey:ServerID,Game;references:ID,Game;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
 
 type AlignmentBook struct {
@@ -19,7 +19,7 @@ type AlignmentBook struct {
 	ServerID string    `gorm:"primaryKey;type:varchar(100);"`
 	Game     amqp.Game `gorm:"primaryKey"`
 	Level    int64
-	City     City   `gorm:"foreignKey:CityID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Order    Order  `gorm:"foreignKey:OrderID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Server   Server `gorm:"foreignKey:ServerID;references:ID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	City     City   `gorm:"foreignKey:CityID,Game;references:ID,Game;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Order    Order  `gorm:"foreignKey:OrderID,Game;references:ID,Game;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Server   Server `gorm:"foreignKey:ServerID,Game;references:ID,Game;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
 }
