@@ -6,6 +6,10 @@ import (
 	amqp "github.com/kaellybot/kaelly-amqp"
 )
 
+// unknownGame lies outside the amqp.Game enum: every defined game but ANY_GAME is
+// supported, so it stands for a game added to kaelly-amqp but not served yet.
+const unknownGame = amqp.Game(99)
+
 // stubService records which handler was invoked, so a test can assert that an
 // unsupported game never reaches the repository layer.
 type stubService struct {
@@ -48,7 +52,7 @@ func requestTypes() []amqp.RabbitMQMessage_Type {
 func TestConsumeHandlesSupportedGames(t *testing.T) {
 	t.Parallel()
 
-	for _, game := range []amqp.Game{amqp.Game_DOFUS_GAME, amqp.Game_DOFUS_TOUCH} {
+	for _, game := range []amqp.Game{amqp.Game_DOFUS_GAME, amqp.Game_DOFUS_TOUCH, amqp.Game_DOFUS_RETRO} {
 		for _, requestType := range requestTypes() {
 			t.Run(game.String()+"/"+requestType.String(), func(t *testing.T) {
 				t.Parallel()
@@ -85,7 +89,7 @@ func TestConsumeRefusesUnsupportedGame(t *testing.T) {
 			service := newTestService(&called, &replies)
 
 			service.consume(amqp.Context{CorrelationID: "correlationID", ReplyTo: "KaellyBot-0.answers"},
-				&amqp.RabbitMQMessage{Type: requestType, Game: amqp.Game_DOFUS_RETRO})
+				&amqp.RabbitMQMessage{Type: requestType, Game: unknownGame})
 
 			if called != 0 {
 				t.Errorf("handler called %d time(s), want 0", called)
@@ -98,8 +102,8 @@ func TestConsumeRefusesUnsupportedGame(t *testing.T) {
 			if reply.message.GetStatus() != amqp.RabbitMQMessage_FAILED {
 				t.Errorf("Status = %v, want %v", reply.message.GetStatus(), amqp.RabbitMQMessage_FAILED)
 			}
-			if reply.message.GetGame() != amqp.Game_DOFUS_RETRO {
-				t.Errorf("Game = %v, want %v", reply.message.GetGame(), amqp.Game_DOFUS_RETRO)
+			if reply.message.GetGame() != unknownGame {
+				t.Errorf("Game = %v, want %v", reply.message.GetGame(), unknownGame)
 			}
 			if reply.correlationID != "correlationID" {
 				t.Errorf("correlationID = %q, want %q", reply.correlationID, "correlationID")
@@ -162,7 +166,8 @@ func TestIsGameSupported(t *testing.T) {
 		amqp.Game_ANY_GAME:    false,
 		amqp.Game_DOFUS_GAME:  true,
 		amqp.Game_DOFUS_TOUCH: true,
-		amqp.Game_DOFUS_RETRO: false,
+		amqp.Game_DOFUS_RETRO: true,
+		unknownGame:           false,
 	}
 
 	for game, want := range tests {

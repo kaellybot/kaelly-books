@@ -88,9 +88,9 @@ func (service *Impl) handle(ctx amqp.Context, message *amqp.RabbitMQMessage,
 // a game is supported as soon as its jobs, cities and orders exist in database.
 func isGameSupported(game amqp.Game) bool {
 	switch game {
-	case amqp.Game_DOFUS_GAME, amqp.Game_DOFUS_TOUCH:
+	case amqp.Game_DOFUS_GAME, amqp.Game_DOFUS_TOUCH, amqp.Game_DOFUS_RETRO:
 		return true
-	case amqp.Game_ANY_GAME, amqp.Game_DOFUS_RETRO:
+	case amqp.Game_ANY_GAME:
 		return false
 	default:
 		return false
